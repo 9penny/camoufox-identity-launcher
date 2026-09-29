@@ -1,0 +1,1 @@
+"""Local Camoufox identity launcher."""
