@@ -18,23 +18,82 @@ class App:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Camoufox 身份启动器")
+        self.root.geometry("1040x760")
+        self.root.minsize(860, 620)
         self.root.tk.call("tk", "scaling", self.root.winfo_fpixels("1i") / 72)
         self.dpi = None
         self.root.bind("<Configure>", self._update_dpi)
-        ttk.Style().theme_use("vista")
+        self._configure_styles()
         self.identities = load_identities()
         self.events = queue.Queue()
         self.browser = BrowserManager(lambda *event: self.events.put(("browser", *event)))
         self.states: dict[str, str] = {}
         self.current_id: str | None = None
         self.locate_sequence = 0
-        self.list_page = ttk.Frame(root, padding=18)
-        self.edit_page = ttk.Frame(root, padding=18)
+        self.list_page = ttk.Frame(root, padding=(32, 28), style="App.TFrame")
+        self.edit_page = ttk.Frame(root, padding=(32, 28), style="App.TFrame")
         self._build_list()
         self._build_edit()
         self.show_list()
         self.root.after(100, self._drain_events)
         self.root.protocol("WM_DELETE_WINDOW", self._close)
+
+    def _configure_styles(self):
+        style = ttk.Style(self.root)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+        self.root.configure(background="#F4F6FA")
+        style.configure("TFrame", background="#F4F6FA")
+        style.configure("App.TFrame", background="#F4F6FA")
+        style.configure("Card.TFrame", background="#FFFFFF")
+        style.configure("TLabel", background="#F4F6FA", foreground="#182230",
+                        font=("Segoe UI", 10))
+        style.configure("Eyebrow.TLabel", background="#F4F6FA", foreground="#52627A",
+                        font=("Segoe UI", 9, "bold"))
+        style.configure("Title.TLabel", background="#F4F6FA", foreground="#152238",
+                        font=("Segoe UI", 24, "bold"))
+        style.configure("Subtitle.TLabel", background="#F4F6FA", foreground="#65748B",
+                        font=("Segoe UI", 10))
+        style.configure("Section.TLabel", background="#FFFFFF", foreground="#182230",
+                        font=("Segoe UI", 12, "bold"))
+        style.configure("CardTitle.TLabel", background="#FFFFFF", foreground="#182230",
+                        font=("Segoe UI", 12, "bold"))
+        style.configure("CardBody.TLabel", background="#FFFFFF", foreground="#66758A",
+                        font=("Segoe UI", 9))
+        style.configure("Field.TLabel", background="#FFFFFF", foreground="#48566B",
+                        font=("Segoe UI", 9, "bold"))
+        style.configure("Muted.TLabel", background="#F4F6FA", foreground="#718096",
+                        font=("Segoe UI", 9))
+        style.configure("Hint.TLabel", background="#FFFFFF", foreground="#52627A",
+                        font=("Segoe UI", 9), wraplength=680)
+        style.configure("Primary.TButton", background="#2764D8", foreground="#FFFFFF",
+                        padding=(15, 9), borderwidth=0, font=("Segoe UI", 10, "bold"))
+        style.map("Primary.TButton", background=[("active", "#1E50B4"), ("disabled", "#AABBDD")],
+                  foreground=[("disabled", "#F4F6FA")])
+        style.configure("Secondary.TButton", background="#E9EEF6", foreground="#24344D",
+                        padding=(11, 7), borderwidth=0, font=("Segoe UI", 9, "bold"))
+        style.map("Secondary.TButton", background=[("active", "#DCE5F1")])
+        style.configure("Quiet.TButton", background="#FFFFFF", foreground="#52627A",
+                        padding=(9, 6), borderwidth=0, font=("Segoe UI", 9))
+        style.map("Quiet.TButton", background=[("active", "#EEF2F8")])
+        style.configure("Danger.TButton", background="#FFF0F0", foreground="#B42318",
+                        padding=(9, 6), borderwidth=0, font=("Segoe UI", 9))
+        style.map("Danger.TButton", background=[("active", "#FDE0E0")])
+        style.configure("Status.Running.TLabel", background="#E8F7EF", foreground="#167346",
+                        padding=(9, 4), font=("Segoe UI", 9, "bold"))
+        style.configure("Status.Starting.TLabel", background="#FFF5DE", foreground="#946200",
+                        padding=(9, 4), font=("Segoe UI", 9, "bold"))
+        style.configure("Status.Error.TLabel", background="#FFF0F0", foreground="#B42318",
+                        padding=(9, 4), font=("Segoe UI", 9, "bold"))
+        style.configure("Status.Stopped.TLabel", background="#EDF1F6", foreground="#536277",
+                        padding=(9, 4), font=("Segoe UI", 9, "bold"))
+        style.configure("TEntry", padding=(9, 8), fieldbackground="#FFFFFF",
+                        foreground="#182230", bordercolor="#D7DFEA", lightcolor="#D7DFEA",
+                        darkcolor="#D7DFEA")
+        style.configure("TCombobox", padding=(8, 7), fieldbackground="#FFFFFF",
+                        foreground="#182230", bordercolor="#D7DFEA", arrowcolor="#52627A")
+        style.configure("Vertical.TScrollbar", background="#D9E1EC", troughcolor="#F4F6FA",
+                        bordercolor="#F4F6FA", arrowsize=12)
 
     def _update_dpi(self, _event=None):
         try:
@@ -46,16 +105,36 @@ class App:
             pass
 
     def _build_list(self):
-        top = ttk.Frame(self.list_page)
-        top.pack(fill="x")
-        ttk.Label(top, text="身份列表", font=("Segoe UI", 16, "bold")).pack(side="left")
-        ttk.Button(top, text="新建身份", command=lambda: self.show_edit(None)).pack(side="right")
-        ttk.Separator(self.list_page).pack(fill="x", pady=(14, 10))
-        self.list_hint = ttk.Label(self.list_page, text="")
-        self.list_hint.pack(anchor="w", pady=(0, 6))
+        top = ttk.Frame(self.list_page, style="App.TFrame")
+        top.pack(fill="x", pady=(0, 24))
+        title_group = ttk.Frame(top, style="App.TFrame")
+        title_group.pack(side="left", fill="x", expand=True)
+        ttk.Label(title_group, text="CAMOUFOX  /  PROFILE MANAGER", style="Eyebrow.TLabel").pack(anchor="w")
+        ttk.Label(title_group, text="浏览器身份", style="Title.TLabel").pack(anchor="w", pady=(5, 2))
+        ttk.Label(title_group, text="为不同用途创建独立的浏览器环境，设置和数据保存在本机。",
+                  style="Subtitle.TLabel").pack(anchor="w")
+        ttk.Button(top, text="＋  新建身份", style="Primary.TButton",
+                   command=lambda: self.show_edit(None)).pack(side="right", anchor="center", padx=(18, 0))
+
+        summary = ttk.Frame(self.list_page, style="App.TFrame")
+        summary.pack(fill="x", pady=(0, 14))
+        self.identity_count = tk.StringVar(value="0")
+        self.running_count = tk.StringVar(value="0")
+        for parent, label, variable in (
+            (summary, "已创建身份", self.identity_count),
+            (summary, "正在运行", self.running_count),
+        ):
+            card = ttk.Frame(parent, style="Card.TFrame", padding=(16, 11))
+            card.pack(side="left", fill="x", expand=True, padx=(0, 10))
+            ttk.Label(card, textvariable=variable, style="CardTitle.TLabel",
+                      font=("Segoe UI", 17, "bold")).pack(anchor="w")
+            ttk.Label(card, text=label, style="CardBody.TLabel").pack(anchor="w", pady=(1, 0))
+
+        self.list_hint = ttk.Label(self.list_page, text="", style="Subtitle.TLabel", wraplength=850)
+        self.list_hint.pack(anchor="w", fill="x", pady=(0, 8))
         container = ttk.Frame(self.list_page)
         container.pack(fill="both", expand=True)
-        self.canvas = tk.Canvas(container, borderwidth=0, highlightthickness=0)
+        self.canvas = tk.Canvas(container, borderwidth=0, highlightthickness=0, background="#F4F6FA")
         scroll = ttk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
@@ -64,52 +143,86 @@ class App:
         self.canvas_window = self.canvas.create_window((0, 0), window=self.rows, anchor="nw")
         self.rows.bind("<Configure>", lambda _e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self.canvas_window, width=e.width))
-        ttk.Label(self.list_page, text=f"本地数据：{APP_DIR}").pack(anchor="w", pady=(12, 0))
+        ttk.Label(self.list_page, text=f"本地数据  ·  {APP_DIR}", style="Muted.TLabel",
+                  wraplength=900).pack(anchor="w", pady=(14, 0))
         try:
             version_text = browser_version_label()
         except Exception:
             version_text = "Camoufox 浏览器版本：未安装"
-        ttk.Label(self.list_page, text=version_text).pack(anchor="w", pady=(4, 0))
+        ttk.Label(self.list_page, text=version_text, style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
 
     def _build_edit(self):
-        ttk.Label(self.edit_page, text="身份编辑", font=("Segoe UI", 16, "bold")).grid(
-            row=0, column=0, columnspan=3, sticky="w", pady=(0, 16))
+        top = ttk.Frame(self.edit_page, style="App.TFrame")
+        top.pack(fill="x", pady=(0, 20))
+        ttk.Button(top, text="←  返回", style="Quiet.TButton", command=self.show_list).pack(side="left", padx=(0, 16))
+        title_group = ttk.Frame(top, style="App.TFrame")
+        title_group.pack(side="left", fill="x", expand=True)
+        ttk.Label(title_group, text="设置一个独立的浏览器环境", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_group, text="代理、位置与语言参数都只应用于这个身份。",
+                  style="Subtitle.TLabel").pack(anchor="w", pady=(3, 0))
         self.vars = {name: tk.StringVar() for name in (
             "name", "proxy_type", "host", "port", "username", "password",
             "country", "timezone", "language", "latitude", "longitude")}
         self.vars["proxy_type"].set("none")
-        fields = [
-            ("名称", "name"), ("代理类型", "proxy_type"), ("主机", "host"),
-            ("端口", "port"), ("用户名", "username"), ("密码", "password"),
-        ]
-        for row, (label, key) in enumerate(fields, 1):
-            ttk.Label(self.edit_page, text=label).grid(row=row, column=0, sticky="w", pady=5, padx=(0, 12))
-            if key == "proxy_type":
-                widget = ttk.Combobox(self.edit_page, textvariable=self.vars[key],
+        proxy_card = ttk.Frame(self.edit_page, style="Card.TFrame", padding=20)
+        proxy_card.pack(fill="x", pady=(0, 14))
+        ttk.Label(proxy_card, text="代理连接", style="Section.TLabel").grid(
+            row=0, column=0, columnspan=4, sticky="w")
+        ttk.Label(proxy_card, text="可留空直连；如使用代理，请填写代理服务提供的地址和凭据。",
+                  style="CardBody.TLabel").grid(row=1, column=0, columnspan=4, sticky="w", pady=(3, 14))
+
+        def add_field(parent, label, key, row, column, span=1, kind="entry"):
+            field = ttk.Frame(parent, style="Card.TFrame")
+            field.grid(row=row, column=column, columnspan=span, sticky="ew",
+                       padx=(0, 12 if column == 0 and span == 2 else 0), pady=(0, 12))
+            ttk.Label(field, text=label, style="Field.TLabel").pack(anchor="w", pady=(0, 5))
+            if kind == "proxy":
+                widget = ttk.Combobox(field, textvariable=self.vars[key],
                                       values=("none", "http", "https", "socks5"), state="readonly")
             else:
-                widget = ttk.Entry(self.edit_page, textvariable=self.vars[key], width=38,
-                                   show="*" if key == "password" else "")
-            widget.grid(row=row, column=1, columnspan=2, sticky="ew", pady=5)
-        ttk.Separator(self.edit_page).grid(row=7, column=0, columnspan=3, sticky="ew", pady=12)
-        ttk.Label(self.edit_page, text="IP 定位结果").grid(row=8, column=0, sticky="w")
-        self.proxy_test_button = ttk.Button(self.edit_page, text="测试代理", command=self._test_proxy)
-        self.proxy_test_button.grid(row=8, column=1, sticky="e", padx=(0, 8))
-        self.locate_button = ttk.Button(self.edit_page, text="按 IP 自动填充", command=self._auto_locate)
-        self.locate_button.grid(row=8, column=2, sticky="e")
-        for row, (label, key) in enumerate((
-            ("国家/地区代码", "country"), ("时区", "timezone"), ("语言", "language"),
-            ("纬度", "latitude"), ("经度", "longitude")), 9):
-            ttk.Label(self.edit_page, text=label).grid(row=row, column=0, sticky="w", pady=5, padx=(0, 12))
-            ttk.Entry(self.edit_page, textvariable=self.vars[key], width=38).grid(
-                row=row, column=1, columnspan=2, sticky="ew", pady=5)
-        self.edit_hint = ttk.Label(self.edit_page, text="", foreground="#a33", wraplength=560)
-        self.edit_hint.grid(row=14, column=0, columnspan=3, sticky="w", pady=(12, 2))
-        actions = ttk.Frame(self.edit_page)
-        actions.grid(row=15, column=0, columnspan=3, sticky="e", pady=(8, 0))
-        ttk.Button(actions, text="取消", command=self.show_list).pack(side="right", padx=(8, 0))
-        ttk.Button(actions, text="保存", command=self._save).pack(side="right")
-        self.edit_page.columnconfigure(1, weight=1)
+                widget = ttk.Entry(field, textvariable=self.vars[key], show="*" if key == "password" else "")
+            widget.pack(fill="x")
+            return widget
+
+        add_field(proxy_card, "身份名称", "name", 2, 0, 4)
+        add_field(proxy_card, "代理类型", "proxy_type", 3, 0, 2, "proxy")
+        add_field(proxy_card, "代理主机", "host", 3, 2, 2)
+        add_field(proxy_card, "端口", "port", 4, 0, 2)
+        add_field(proxy_card, "用户名（可选）", "username", 4, 2, 2)
+        add_field(proxy_card, "密码（可选）", "password", 5, 0, 4)
+        proxy_card.columnconfigure(0, weight=1, uniform="proxy")
+        proxy_card.columnconfigure(1, weight=1, uniform="proxy")
+        proxy_card.columnconfigure(2, weight=1, uniform="proxy")
+        proxy_card.columnconfigure(3, weight=1, uniform="proxy")
+
+        geo_card = ttk.Frame(self.edit_page, style="Card.TFrame", padding=20)
+        geo_card.pack(fill="x")
+        geo_header = ttk.Frame(geo_card, style="Card.TFrame")
+        geo_header.grid(row=0, column=0, columnspan=4, sticky="ew")
+        geo_titles = ttk.Frame(geo_header, style="Card.TFrame")
+        geo_titles.pack(side="left", fill="x", expand=True)
+        ttk.Label(geo_titles, text="位置与语言", style="Section.TLabel").pack(anchor="w")
+        ttk.Label(geo_titles, text="检测代理出口位置，或按需手动调整。",
+                  style="CardBody.TLabel").pack(anchor="w", pady=(3, 0))
+        self.proxy_test_button = ttk.Button(geo_header, text="测试代理", command=self._test_proxy,
+                                            style="Quiet.TButton")
+        self.locate_button = ttk.Button(geo_header, text="按 IP 自动填充", command=self._auto_locate,
+                                        style="Secondary.TButton")
+        self.proxy_test_button.pack(side="right", padx=(8, 0))
+        self.locate_button.pack(side="right")
+        add_field(geo_card, "国家/地区代码", "country", 1, 0, 2)
+        add_field(geo_card, "时区", "timezone", 1, 2, 2)
+        add_field(geo_card, "语言", "language", 2, 0, 2)
+        add_field(geo_card, "纬度", "latitude", 2, 2, 1)
+        add_field(geo_card, "经度", "longitude", 2, 3, 1)
+        for col in range(4):
+            geo_card.columnconfigure(col, weight=1, uniform="geo")
+        self.edit_hint = ttk.Label(geo_card, text="", style="Hint.TLabel", wraplength=760)
+        self.edit_hint.grid(row=3, column=0, columnspan=4, sticky="w", pady=(0, 0))
+        actions = ttk.Frame(self.edit_page, style="App.TFrame")
+        actions.pack(fill="x", pady=(18, 0))
+        ttk.Button(actions, text="取消", style="Quiet.TButton", command=self.show_list).pack(side="right", padx=(8, 0))
+        ttk.Button(actions, text="保存身份", style="Primary.TButton", command=self._save).pack(side="right")
         for key in ("proxy_type", "host", "port", "username", "password"):
             self.vars[key].trace_add("write", self._proxy_changed)
 
@@ -135,30 +248,55 @@ class App:
     def _render_list(self):
         for child in self.rows.winfo_children():
             child.destroy()
+        self.identity_count.set(str(len(self.identities)))
+        self.running_count.set(str(sum(self.states.get(item["id"]) in ("starting", "running", "stopping")
+                                       for item in self.identities)))
         if not self.identities:
-            ttk.Label(self.rows, text="还没有身份。点击“新建身份”开始。", padding=20).pack(anchor="w")
+            empty = ttk.Frame(self.rows, style="Card.TFrame", padding=28)
+            empty.pack(fill="x", pady=8)
+            ttk.Label(empty, text="还没有浏览器身份", style="CardTitle.TLabel").pack(anchor="w")
+            ttk.Label(empty, text="创建第一个身份后，可为它配置独立代理、语言和位置参数。",
+                      style="CardBody.TLabel").pack(anchor="w", pady=(5, 14))
+            ttk.Button(empty, text="＋  创建第一个身份", style="Primary.TButton",
+                       command=lambda: self.show_edit(None)).pack(anchor="w")
             return
-        header = ttk.Frame(self.rows)
-        header.pack(fill="x", pady=(0, 7))
-        for text_, width in (("名称", 22), ("代理位置", 25), ("运行状态", 12)):
-            ttk.Label(header, text=text_, width=width).pack(side="left")
         for item in self.identities:
             identity_id = item["id"]
-            row = ttk.Frame(self.rows)
-            row.pack(fill="x", pady=4)
-            ttk.Label(row, text=item["name"], width=22).pack(side="left")
-            location = item.get("country") or "未设置"
+            card = ttk.Frame(self.rows, style="Card.TFrame", padding=(18, 14))
+            card.pack(fill="x", pady=(0, 10))
+            card.columnconfigure(0, weight=1)
+            details = ttk.Frame(card, style="Card.TFrame")
+            details.grid(row=0, column=0, sticky="ew")
+            ttk.Label(details, text=item["name"], style="CardTitle.TLabel").pack(anchor="w")
+            metadata = []
+            proxy_type = item.get("proxy_type", "none")
+            if proxy_type and proxy_type != "none":
+                metadata.append(f"{proxy_type.upper()}  {item.get('host', '')}:{item.get('port', '')}")
+            else:
+                metadata.append("直连")
+            metadata.append(item.get("country") or "位置未设置")
             if item.get("ip"):
-                location += " · " + item["ip"]
-            ttk.Label(row, text=location, width=25).pack(side="left")
+                metadata.append(item["ip"])
+            ttk.Label(details, text="  ·  ".join(metadata), style="CardBody.TLabel").pack(anchor="w", pady=(4, 0))
             state = self.states.get(identity_id, "stopped")
-            ttk.Label(row, text={"starting": "启动中", "running": "运行中", "stopping": "停止中",
-                                 "stopped": "已停止", "error": "启动失败"}.get(state, state), width=12).pack(side="left")
-            for label, action in (("编辑", self.show_edit), ("启动", self._start),
-                                  ("停止", self._stop), ("删除", self._delete)):
-                ttk.Button(row, text=label, command=lambda ident=identity_id, fn=action: fn(ident)).pack(
-                    side="left", padx=(0, 5))
-            ttk.Separator(self.rows).pack(fill="x")
+            state_text = {"starting": "启动中", "running": "运行中", "stopping": "停止中",
+                          "stopped": "已停止", "error": "启动失败"}.get(state, state)
+            state_style = {"running": "Status.Running.TLabel", "starting": "Status.Starting.TLabel",
+                           "stopping": "Status.Starting.TLabel", "error": "Status.Error.TLabel"}.get(
+                               state, "Status.Stopped.TLabel")
+            right = ttk.Frame(card, style="Card.TFrame")
+            right.grid(row=0, column=1, sticky="e", padx=(18, 0))
+            ttk.Label(right, text=state_text, style=state_style).pack(side="left", padx=(0, 12))
+            ttk.Button(right, text="编辑", style="Quiet.TButton",
+                       command=lambda ident=identity_id: self.show_edit(ident)).pack(side="left", padx=(0, 5))
+            if state in ("starting", "running", "stopping"):
+                ttk.Button(right, text="停止", style="Secondary.TButton",
+                           command=lambda ident=identity_id: self._stop(ident)).pack(side="left", padx=(0, 5))
+            else:
+                ttk.Button(right, text="启动", style="Primary.TButton",
+                           command=lambda ident=identity_id: self._start(ident)).pack(side="left", padx=(0, 5))
+            ttk.Button(right, text="删除", style="Danger.TButton",
+                       command=lambda ident=identity_id: self._delete(ident)).pack(side="left")
 
     def show_edit(self, identity_id: str | None):
         if identity_id and self.browser.running(identity_id):
